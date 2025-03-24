@@ -103,8 +103,7 @@ function updateCartSummary() {
 
 // Discord Webhook'a sipariş gönderme (optimize edilmiş)
 async function sendOrderToDiscord(orderData) {
-    const WEBHOOK_URL = 'https://discord.com/api/webhooks/1353848010735616032/V_lGzTIkpX2fvQLs7v20h2ubd_M6dSXcKta6gac1JelX3fiCm816PkWgvSwXy26-NOTI
-';
+    const WEBHOOK_URL = 'https://discord.com/api/webhooks/1353848010735616032/V_lGzTIkpX2fvQLs7v20h2ubd_M6dSXcKta6gac1JelX3fiCm816PkWgvSwXy26-NOTI';
 
     try {
         const itemsList = orderData.items.map(item => 
@@ -127,7 +126,7 @@ async function sendOrderToDiscord(orderData) {
                 },
                 {
                     name: "💰 Özet",
-                    value: `**Ara Toplam:** ${orderData.subtotal.toFixed(2)} ₺\n**KDV (%5):** ${orderData.tax.toFixed(2)} ₺\n**Toplam:** ${orderData.total.toFixed(2)} ₺`,
+                    value: `**Ara Toplam:** ${orderData.subtotal.toFixed(2)} ₺\n**KDV (%18):** ${orderData.tax.toFixed(2)} ₺\n**Toplam:** ${orderData.total.toFixed(2)} ₺`,
                     inline: false
                 }
             ],
