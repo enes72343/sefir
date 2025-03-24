@@ -3,146 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hesabım - SefirHost</title>
+    <title>Giriş Yap</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        .auth-container {
-            max-width: 500px;
-            margin: 0 auto;
-            padding: 2rem;
-            border-radius: 10px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
-            background: white;
+        body {
+            background-color: #f8f9fa;
         }
-        .loading-spinner {
-            width: 3rem;
-            height: 3rem;
+        .login-container {
+            max-width: 400px;
+            margin: 100px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
         }
     </style>
 </head>
-<body class="bg-light">
-    <div class="container py-5">
-        <div id="content-container">
-            <!-- İçerik burada dinamik olarak yüklenecek -->
-            <div class="text-center py-5">
-                <div class="spinner-border text-primary loading-spinner" role="status">
-                    <span class="visually-hidden">Yükleniyor...</span>
+<body>
+    <div class="container">
+        <div class="login-container">
+            <h2 class="text-center mb-4">Giriş Yap</h2>
+            <form id="login-form">
+                <div class="mb-3">
+                    <label for="email" class="form-label">E-posta</label>
+                    <input type="email" class="form-control" id="email" required>
                 </div>
-                <p class="mt-3">Hesap bilgileriniz yükleniyor...</p>
+                <div class="mb-3">
+                    <label for="password" class="form-label">Şifre</label>
+                    <input type="password" class="form-control" id="password" required>
+                </div>
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="remember">
+                    <label class="form-check-label" for="remember">Beni hatırla</label>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Giriş Yap</button>
+            </form>
+            <div class="mt-3 text-center">
+                <p>Hesabınız yok mu? <a href="kayit.html">Kayıt Ol</a></p>
             </div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Simüle edilmiş yükleme süresi
-            setTimeout(loadAccountContent, 1500);
-        });
-
-        function loadAccountContent() {
-            const contentContainer = document.getElementById('content-container');
-            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-            
-            if (!currentUser) {
-                // Kullanıcı giriş yapmamışsa
-                contentContainer.innerHTML = `
-                    <div class="auth-container text-center">
-                        <i class="fas fa-exclamation-triangle fa-4x text-warning mb-4"></i>
-                        <h3 class="mb-4">Giriş Yapmamışsınız</h3>
-                        <p class="mb-4">Satın alımlarınızı görüntülemek için giriş yapmalısınız.</p>
-                        <div class="d-grid gap-3">
-                            <a href="giris.html" class="btn btn-primary btn-lg">
-                                <i class="fas fa-sign-in-alt me-2"></i>Giriş Yap
-                            </a>
-                            <a href="kayit.html" class="btn btn-outline-secondary btn-lg">
-                                <i class="fas fa-user-plus me-2"></i>Kayıt Ol
-                            </a>
-                        </div>
-                    </div>
-                `;
-                return;
-            }
-
-            // Kullanıcı giriş yapmışsa satın alımları yükle
-            const purchases = currentUser.purchases || [];
-            
-            if (purchases.length === 0) {
-                contentContainer.innerHTML = `
-                    <div class="auth-container text-center">
-                        <i class="fas fa-shopping-bag fa-4x text-primary mb-4"></i>
-                        <h3 class="mb-3">Satın Alım Bulunamadı</h3>
-                        <p class="mb-4">Henüz bir satın alım yapmamışsınız.</p>
-                        <a href="urunler.html" class="btn btn-primary btn-lg">
-                            <i class="fas fa-shopping-cart me-2"></i>Ürünlere Gözat
-                        </a>
-                    </div>
-                `;
-                return;
-            }
-
-            // Satın alımları göster
-            contentContainer.innerHTML = `
-                <div class="card shadow-sm">
-                    <div class="card-header bg-white">
-                        <h4 class="mb-0">
-                            <i class="fas fa-shopping-bag me-2"></i>
-                            Satın Alımlarım
-                        </h4>
-                    </div>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead>
-                                    <tr>
-                                        <th>Ürün</th>
-                                        <th>Tarih</th>
-                                        <th>Fiyat</th>
-                                        <th>Durum</th>
-                                        <th>İşlem</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${purchases.map(purchase => `
-                                        <tr>
-                                            <td>${purchase.name || 'Ürün'}</td>
-                                            <td>${formatDate(purchase.date)}</td>
-                                            <td>${(purchase.price || 0).toFixed(2)} ₺</td>
-                                            <td>
-                                                <span class="badge ${getStatusClass(purchase.status)}">
-                                                    ${purchase.status || 'Bekliyor'}
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <button class="btn btn-sm btn-outline-primary">
-                                                    <i class="fas fa-download me-1"></i>İndir
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    `).join('')}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function formatDate(dateString) {
-            if (!dateString) return 'Bilgi yok';
-            const date = new Date(dateString);
-            return date.toLocaleDateString('tr-TR');
-        }
-
-        function getStatusClass(status) {
-            switch((status || '').toLowerCase()) {
-                case 'tamamlandı': return 'bg-success';
-                case 'iptal edildi': return 'bg-danger';
-                case 'işleme alındı': return 'bg-info';
-                default: return 'bg-warning text-dark';
-            }
-        }
-    </script>
+    <script src="giris.js"></script>
 </body>
 </html>
