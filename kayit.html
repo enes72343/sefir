@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kayıt Ol - SefirHost</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Kayıt Sayfası Özel Stilleri */
+        .register-container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            background: white;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .register-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: linear-gradient(90deg, #0066ff, #00ccff);
+        }
+        
+        .progress-steps {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            position: relative;
+        }
+        
+        .progress-steps::before {
+            content: '';
+            position: absolute;
+            top: 15px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #eee;
+            z-index: 1;
+        }
+        
+        .step {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            width: 30px;
+        }
+        
+        .step-number {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #ddd;
+            color: #777;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 5px;
+            font-weight: bold;
+        }
+        
+        .step.active .step-number {
+            background: #0066ff;
+            color: white;
+        }
+        
+        .step.completed .step-number {
+            background: #00cc66;
+            color: white;
+        }
+        
+        .step-text {
+            font-size: 12px;
+            color: #777;
+        }
+        
+        .step.active .step-text {
+            color: #0066ff;
+            font-weight: 500;
+        }
+        
+        .form-section {
+            display: none;
+        }
+        
+        .form-section.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .password-strength {
+            height: 5px;
+            background: #eee;
+            margin-top: 5px;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        
+        .password-strength-bar {
+            height: 100%;
+            width: 0%;
+            background: #dc3545;
+            transition: width 0.3s ease;
+        }
+        
+        .terms-box {
+            max-height: 200px;
+            overflow-y: auto;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            background: #f9f9f9;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="index.html">
+                <i class="fas fa-cube me-2"></i>SefirHost
+            </a>
+            <div class="d-flex">
+                <a href="sepet.html" class="btn btn-light me-2">
+                    <i class="fas fa-shopping-cart"></i> <span class="d-none d-md-inline">Sepet</span> <span id="cart-count" class="badge bg-danger">0</span>
+                </a>
+                <a href="giris.html" class="btn btn-outline-light">
+                    <i class="fas fa-user"></i> <span class="d-none d-md-inline">Giriş Yap</span>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Kayıt Formu -->
+    <section class="py-5">
+        <div class="container">
+            <div class="register-container">
+                <h2 class="text-center mb-4">Yeni Hesap Oluştur</h2>
+                <p class="text-center text-muted mb-4">Premium eğitim paketlerine erişmek için kayıt olun</p>
+                
+                <!-- Kayıt Adımları -->
+                <div class="progress-steps">
+                    <div class="step active" id="step1">
+                        <div class="step-number">1</div>
+                        <div class="step-text">Bilgiler</div>
+                    </div>
+                    <div class="step" id="step2">
+                        <div class="step-number">2</div>
+                        <div class="step-text">Hesap</div>
+                    </div>
+                    <div class="step" id="step3">
+                        <div class="step-number">3</div>
+                        <div class="step-text">Tamamla</div>
+                    </div>
+                </div>
+                
+                <!-- 1. Adım: Kişisel Bilgiler -->
+                <div class="form-section active" id="section1">
+                    <form id="personalInfoForm">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="firstName" class="form-label">Adınız</label>
+                                <input type="text" class="form-control" id="firstName" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="lastName" class="form-label">Soyadınız</label>
+                                <input type="text" class="form-control" id="lastName" required>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="email" class="form-label">E-posta Adresi</label>
+                            <input type="email" class="form-control" id="email" required>
+                            <div class="form-text">Eğitim bilgileri bu adrese gönderilecek</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="phone" class="form-label">Telefon Numarası</label>
+                            <input type="tel" class="form-control" id="phone">
+                        </div>
+                        <div class="d-flex justify-content-end">
+                            <button type="button" class="btn btn-primary next-step" data-next="2">Sonraki Adım <i class="fas fa-arrow-right ms-2"></i></button>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- 2. Adım: Hesap Bilgileri -->
+                <div class="form-section" id="section2">
+                    <form id="accountInfoForm">
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Kullanıcı Adı</label>
+                            <input type="text" class="form-control" id="username" required>
+                            <div class="form-text">Profil sayfanızda görünecek</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Şifre</label>
+                            <input type="password" class="form-control" id="password" required>
+                            <div class="password-strength">
+                                <div class="password-strength-bar" id="passwordStrength"></div>
+                            </div>
+                            <div class="form-text">En az 8 karakter, büyük/küçük harf ve sayı içermeli</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="confirmPassword" class="form-label">Şifre Tekrar</label>
+                            <input type="password" class="form-control" id="confirmPassword" required>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <button type="button" class="btn btn-outline-secondary prev-step" data-prev="1"><i class="fas fa-arrow-left me-2"></i> Önceki Adım</button>
+                            <button type="button" class="btn btn-primary next-step" data-next="3">Sonraki Adım <i class="fas fa-arrow-right ms-2"></i></button>
+                        </div>
+                    </form>
+                </div>
+                
+                <!-- 3. Adım: Sözleşme ve Tamamlama -->
+                <div class="form-section" id="section3">
+                    <form id="finalizeForm">
+                        <div class="mb-3">
+                            <div class="terms-box">
+                                <h5>Kullanım Koşulları</h5>
+<p><strong>1. Sipariş Süreci:</strong> Satın alma işlemi tamamlandığında e-posta adresinize erişim bilgileri gönderilecektir.</p>
+
+<p><strong>2. Lisans:</strong> Bu eğitim paketi yalnızca satın alan kişi tarafından kullanılabilir. Paylaşımı yasaktır.</p>
+
+<p><strong>3. İade Politikası:</strong> Dijital ürün niteliğinde olduğundan, kullanıma başlanmış eğitimlerde iade hakkı bulunmamaktadır.</p>
+
+<p><strong>4. Değişiklik Hakkı:</strong> Eğitim içerikleri önceden haber verilmeksizin güncellenebilir.</p>
+
+<p><strong>5. Garanti:</strong> Eğitimde anlatılan yöntemlerin sonuçları kişisel uygulamalara göre değişiklik gösterebilir.</p>
+                            </div>
+                        </div>
+                        <div class="form-check mb-4">
+                            <input class="form-check-input" type="checkbox" id="acceptTerms" required>
+                            <label class="form-check-label" for="acceptTerms">Kullanım koşullarını ve gizlilik politikasını okudum ve kabul ediyorum</label>
+                        </div>
+                        <div class="form-check mb-4">
+                            <input class="form-check-input" type="checkbox" id="acceptNewsletter">
+                            <label class="form-check-label" for="acceptNewsletter">E-posta ile kampanya ve duyuruları almak istiyorum</label>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <button type="button" class="btn btn-outline-secondary prev-step" data-prev="2"><i class="fas fa-arrow-left me-2"></i> Önceki Adım</button>
+                            <button type="submit" class="btn btn-success">Hesabımı Oluştur <i class="fas fa-check ms-2"></i></button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-4">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5><i class="fas fa-cube me-2"></i>SefirHost</h5>
+                    <p class="mb-0">Premium Satış Paketleri sunar</p>
+                </div>
+                <div class="col-md-3">
+                    <h5>Bağlantılar</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="index.html" class="text-white">Ürünler</a></li>
+                        <li><a href="#" class="text-white">SSS</a></li>
+                        <li><a href="#" class="text-white">İletişim</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-3">
+                    <h5>Sosyal Medya</h5>
+                    <div class="social-links">
+                        <a href="#" class="text-white me-2"><i class="fab fa-discord"></i></a>
+                        <a href="#" class="text-white me-2"><i class="fab fa-instagram"></i></a>
+                        <a href="#" class="text-white"><i class="fab fa-youtube"></i></a>
+                    </div>
+                </div>
+            </div>
+            <hr class="my-4">
+            <div class="text-center">
+                <p class="mb-0">© 2023 SefirHost - Tüm hakları saklıdır</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="register.js"></script>
+</body>
+</html>
