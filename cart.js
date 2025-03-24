@@ -1,24 +1,7 @@
-// Global cart variable
+// Sepet işlemleri için global değişken
 let cart = JSON.parse(localStorage.getItem('cart')) || [];
 
-// DOMContentLoaded event handler
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize cart
-    renderCart();
-    updateCartCount();
-
-    // Checkout button event
-    document.getElementById('checkout-btn')?.addEventListener('click', processCheckout);
-
-    // Add test button for debugging
-    const testBtn = document.createElement('button');
-    testBtn.textContent = 'Test Discord Webhook';
-    testBtn.className = 'btn btn-secondary mt-3';
-    testBtn.onclick = testDiscordWebhook;
-    document.body.appendChild(testBtn);
-});
-
-// Cart functions
+// Sepet sayacını güncelleme fonksiyonu
 function updateCartCount() {
     const cartCount = document.getElementById('cart-count');
     if (cartCount) {
@@ -26,11 +9,13 @@ function updateCartCount() {
     }
 }
 
+// Sepet verilerini localStorage'a kaydetme
 function saveCartToStorage() {
     localStorage.setItem('cart', JSON.stringify(cart));
     updateCartCount();
 }
 
+// Sepeti render etme fonksiyonu (optimize edilmiş)
 function renderCart() {
     const cartItemsContainer = document.getElementById('cart-items');
     if (!cartItemsContainer) return;
@@ -72,11 +57,12 @@ function renderCart() {
         </div>
     `).join('');
 
-    // Event delegation for cart actions
+    // Event delegation kullanarak buton eventleri
     cartItemsContainer.addEventListener('click', handleCartActions);
     updateCartSummary();
 }
 
+// Sepet aksiyonlarını yönetme (event delegation)
 function handleCartActions(e) {
     const cartItem = e.target.closest('.cart-item');
     if (!cartItem) return;
@@ -100,6 +86,7 @@ function handleCartActions(e) {
     renderCart();
 }
 
+// Sepet özetini güncelleme
 function updateCartSummary() {
     const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     const tax = subtotal * 0.18;
@@ -114,165 +101,183 @@ function updateCartSummary() {
     if (cartGrandTotalEl) cartGrandTotalEl.textContent = total.toFixed(2) + ' ₺';
 }
 
-// Discord Webhook Integration
+// Discord Webhook'a sipariş gönderme (optimize edilmiş)
 async function sendOrderToDiscord(orderData) {
     const WEBHOOK_URL = 'https://discord.com/api/webhooks/1353848010735616032/V_lGzTIkpX2fvQLs7v20h2ubd_M6dSXcKta6gac1JelX3fiCm816PkWgvSwXy26-NOTI';
 
     try {
-        // Validate order data
-        if (!orderData || !orderData.user || !orderData.items) {
-            console.error('Invalid order data structure');
-            return false;
-        }
+        const itemsList = orderData.items.map(item => 
+            `- ${item.name} (${item.quantity} x ${item.price.toFixed(2)} ₺) = ${(item.quantity * item.price).toFixed(2)} ₺`
+        ).join('\n');
 
-        // Create Discord embed message
         const embed = {
-            title: "🛒 Yeni Sipariş Bildirimi",
-            color: 0x00ff00,
+            title: "🛒 Yeni Sipariş!",
+            color: 0x0099ff,
             fields: [
                 {
                     name: "👤 Müşteri Bilgileri",
-                    value: `**Ad:** ${orderData.user.name || 'Bilgi Yok'}\n` +
-                           `**E-posta:** ${orderData.user.email || 'Bilgi Yok'}\n` +
-                           `**Kullanıcı Adı:** ${orderData.user.username || 'Bilgi Yok'}`,
+                    value: `**Ad:** ${orderData.user.name}\n**E-posta:** ${orderData.user.email}\n**Kullanıcı Adı:** ${orderData.user.username}`,
                     inline: false
                 },
                 {
                     name: "📦 Sipariş Detayları",
-                    value: orderData.items.map(item => 
-                        `- ${item.name || 'Ürün'} (${item.quantity || 0} x ${(item.price || 0).toFixed(2)}₺)`
-                    ).join('\n') || 'Ürün bilgisi yok',
+                    value: itemsList,
                     inline: false
                 },
                 {
-                    name: "💰 Ödeme Bilgileri",
-                    value: `**Ara Toplam:** ${(orderData.subtotal || 0).toFixed(2)}₺\n` +
-                           `**KDV (%18):** ${(orderData.tax || 0).toFixed(2)}₺\n` +
-                           `**Toplam:** ${(orderData.total || 0).toFixed(2)}₺`,
+                    name: "💰 Özet",
+                    value: `**Ara Toplam:** ${orderData.subtotal.toFixed(2)} ₺\n**KDV (%5):** ${orderData.tax.toFixed(2)} ₺\n**Toplam:** ${orderData.total.toFixed(2)} ₺`,
                     inline: false
                 }
             ],
             timestamp: new Date().toISOString(),
             footer: {
-                text: `Sipariş ID: ${orderData.id || 'Bilgi Yok'} | ${new Date().toLocaleString('tr-TR')}`
+                text: `Sipariş ID: ${orderData.id}`
             }
         };
 
-        // Send to Discord
         const response = await fetch(WEBHOOK_URL, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                username: "Eğitim Market Sipariş Sistemi",
-                avatar_url: "https://i.imgur.com/LJ0lg4Z.png",
+                username: "Eğitim Market Sipariş Botu",
+                avatar_url: "https://i.imgur.com/abcdefg.png",
                 embeds: [embed],
-                content: "Yeni bir sipariş oluşturuldu! <@&ROLE_ID>"
-            })
+                content: `@here Yeni sipariş geldi! 🎉`
+            }),
         });
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error('Discord API Error:', response.status, errorText);
-            return false;
-        }
-
-        console.log('Discord notification sent successfully');
-        return true;
+        return response.ok;
     } catch (error) {
-        console.error('Error sending to Discord:', error);
+        console.error('Discord webhook error:', error);
         return false;
     }
 }
 
-// Checkout process
+// Ödeme işlemi (yeniden düzenlenmiş)
 async function processCheckout() {
-    try {
-        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-        
-        if (!currentUser) {
-            showAlert('Ödeme yapabilmek için giriş yapmalısınız!', 'danger');
-            setTimeout(() => window.location.href = 'giris.html', 1500);
-            return false;
-        }
-        
-        if (!cart || cart.length === 0) {
-            showAlert('Sepetiniz boş!', 'warning');
-            return false;
-        }
-
-        const orderId = 'ORD-' + Date.now();
-        const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-        const tax = subtotal * 0.18;
-        const total = subtotal + tax;
-
-        const orderData = {
-            id: orderId,
-            user: {
-                id: currentUser.id,
-                name: `${currentUser.firstName} ${currentUser.lastName}`,
-                email: currentUser.email,
-                username: currentUser.username
-            },
-            items: cart.map(item => ({
-                id: item.id,
-                name: item.name,
-                price: item.price,
-                quantity: item.quantity,
-                image: item.image
-            })),
-            subtotal,
-            tax,
-            total,
-            date: new Date().toISOString(),
-            status: "Ödeme Bekliyor"
-        };
-
-        // Update user data
-        currentUser.purchases = currentUser.purchases || [];
-        currentUser.purchases.push(orderData);
-        
-        let users = JSON.parse(localStorage.getItem('users')) || [];
-        users = users.map(user => user.id === currentUser.id ? currentUser : user);
-        
-        localStorage.setItem('users', JSON.stringify(users));
-        localStorage.setItem('currentUser', JSON.stringify(currentUser));
-
-        // Send to Discord
-        const discordSuccess = await sendOrderToDiscord(orderData);
-        
-        if (discordSuccess) {
-            // Clear cart
-            cart = [];
-            saveCartToStorage();
-            
-            showAlert('Siparişiniz alındı! Yönlendiriliyorsunuz...', 'success');
-            setTimeout(() => {
-                window.location.href = 'hesabim.html?order=' + orderId;
-            }, 2000);
-        } else {
-            showAlert('Sipariş oluşturuldu ancak bildirim gönderilemedi!', 'warning');
-        }
-        
-        return discordSuccess;
-    } catch (error) {
-        console.error('Checkout error:', error);
-        showAlert('Sipariş işlemi sırasında bir hata oluştu!', 'danger');
+    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+    
+    if (!currentUser) {
+        showAlert('Ödeme yapabilmek için giriş yapmalısınız!', 'danger');
+        setTimeout(() => window.location.href = 'giris.html', 1500);
         return false;
     }
-}
-
-
-
-// Helper function
-function showAlert(message, type) {
-    const alertDiv = document.createElement('div');
-    alertDiv.className = `alert alert-${type} fixed-top mx-auto mt-3`;
-    alertDiv.style.maxWidth = '500px';
-    alertDiv.style.zIndex = '9999';
-    alertDiv.textContent = message;
     
-    document.body.appendChild(alertDiv);
-    setTimeout(() => alertDiv.remove(), 3000);
+    if (cart.length === 0) {
+        showAlert('Sepetiniz boş!', 'warning');
+        return false;
+    }
+
+    const orderId = Date.now();
+    const orderData = {
+        id: orderId,
+        user: {
+            id: currentUser.id,
+            name: `${currentUser.firstName} ${currentUser.lastName}`,
+            email: currentUser.email,
+            username: currentUser.username
+        },
+        items: [...cart],
+        subtotal: cart.reduce((sum, item) => sum + (item.price * item.quantity), 0),
+        tax: cart.reduce((sum, item) => sum + (item.price * item.quantity), 0) * 0.18,
+        total: cart.reduce((sum, item) => sum + (item.price * item.quantity), 0) * 1.18,
+        date: new Date().toISOString(),
+        status: "Bekliyor"
+    };
+
+    // Kullanıcı geçmişini güncelle
+    currentUser.purchases = currentUser.purchases || [];
+    currentUser.purchases.push({
+        id: orderId,
+        items: cart.map(item => ({
+            id: item.id,
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity,
+            image: item.image
+        })),
+        total: orderData.total,
+        date: orderData.date,
+        status: "Bekliyor"
+    });
+
+    // Kullanıcı verilerini güncelle
+    let users = JSON.parse(localStorage.getItem('users')) || [];
+    users = users.map(user => user.id === currentUser.id ? currentUser : user);
+    localStorage.setItem('users', JSON.stringify(users));
+    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+
+    // Discord'a gönder
+    const discordSuccess = await sendOrderToDiscord(orderData);
+    
+    if (discordSuccess) {
+        // Sepeti temizle
+        cart = [];
+        saveCartToStorage();
+        
+        showAlert('Siparişiniz alındı! Discord sunucumuza bekleriz.', 'success');
+        setTimeout(() => window.location.href = 'hesabim.html', 2000);
+    } else {
+        showAlert('Sipariş oluşturuldu ancak bildirim gönderilemedi!', 'warning');
+    }
+    
+    return discordSuccess;
 }
+
+// Sipariş arama sistemi (optimize edilmiş)
+async function searchOrder(orderId) {
+    if (!orderId) {
+        showAlert('Lütfen bir sipariş numarası girin!', 'warning');
+        return false;
+    }
+
+    showAlert('Sipariş aranıyor...', 'info');
+
+    // Önce localStorage'da ara
+    const allUsers = JSON.parse(localStorage.getItem('users')) || [];
+    for (const user of allUsers) {
+        if (user.purchases) {
+            const order = user.purchases.find(p => p.id == orderId);
+            if (order) {
+                displayOrderDetails(order, user);
+                await searchOrderInDiscord(orderId); // Discord'ta da ara
+                return true;
+            }
+        }
+    }
+
+    // Local'de bulunamadı, Discord'ta ara
+    const discordResult = await searchOrderInDiscord(orderId);
+    if (discordResult) {
+        document.getElementById('order-search-results').innerHTML = `
+            <div class="alert alert-info">
+                Sipariş #${orderId} bulunamadı. Discord üzerinden arandı, sonuçlar kanalda görüntülenecek.
+            </div>
+        `;
+    } else {
+        showAlert('Sipariş bulunamadı ve Discord bağlantısı kurulamadı!', 'danger');
+    }
+    
+    return discordResult;
+}
+
+// Sayfa yüklendiğinde
+document.addEventListener('DOMContentLoaded', () => {
+    renderCart();
+    
+    // Ödeme butonu eventi
+    document.getElementById('checkout-btn')?.addEventListener('click', async (e) => {
+        e.preventDefault();
+        await processCheckout();
+    });
+
+    // Sipariş arama formu
+    document.getElementById('order-search-form')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const orderId = document.getElementById('order-search-input').value.trim();
+        await searchOrder(orderId);
+    });
+});
