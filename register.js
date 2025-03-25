@@ -22,7 +22,20 @@ document.addEventListener('DOMContentLoaded', function() {
     const passwordStrengthBar = document.getElementById('passwordStrength');
     
     passwordInput.addEventListener('input', function() {
-        updatePasswordStrength(this.value);
+        const password = this.value;
+        const strength = calculatePasswordStrength(password);
+        
+        // Renk ve genişlik güncelleme
+        if (strength < 30) {
+            passwordStrengthBar.style.backgroundColor = '#dc3545';
+            passwordStrengthBar.style.width = strength + '%';
+        } else if (strength < 70) {
+            passwordStrengthBar.style.backgroundColor = '#ffc107';
+            passwordStrengthBar.style.width = strength + '%';
+        } else {
+            passwordStrengthBar.style.backgroundColor = '#28a745';
+            passwordStrengthBar.style.width = strength + '%';
+        }
     });
     
     // Form gönderimi
@@ -31,80 +44,30 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Form verilerini topla
         const userData = {
-            id: Date.now(), // Benzersiz ID
-            firstName: document.getElementById('firstName').value.trim(),
-            lastName: document.getElementById('lastName').value.trim(),
-            email: document.getElementById('email').value.trim().toLowerCase(),
-            phone: document.getElementById('phone').value.trim(),
-            username: document.getElementById('username').value.trim(),
+            firstName: document.getElementById('firstName').value,
+            lastName: document.getElementById('lastName').value,
+            email: document.getElementById('email').value,
+            phone: document.getElementById('phone').value,
+            username: document.getElementById('username').value,
             password: document.getElementById('password').value,
-            acceptNewsletter: document.getElementById('acceptNewsletter').checked,
-            createdAt: new Date().toISOString(),
-            purchases: [] // Satın alımlar için boş array
+            acceptNewsletter: document.getElementById('acceptNewsletter').checked
         };
         
-        // Kullanıcıları LocalStorage'dan al
+        // LocalStorage'a kaydet (gerçek uygulamada sunucuya gönderilmeli)
         let users = JSON.parse(localStorage.getItem('users')) || [];
-        
-        // E-posta kontrolü
-        const emailExists = users.some(user => user.email === userData.email);
-        if(emailExists) {
-            alert('Bu e-posta adresi zaten kayıtlı!');
-            goToStep(1);
-            return;
-        }
-        
-        // Kullanıcı adı kontrolü
-        const usernameExists = users.some(user => user.username === userData.username);
-        if(usernameExists) {
-            alert('Bu kullanıcı adı zaten alınmış!');
-            goToStep(2);
-            return;
-        }
-        
-        // Kullanıcıyı kaydet
         users.push(userData);
         localStorage.setItem('users', JSON.stringify(users));
         
-        // Otomatik giriş yap
-        localStorage.setItem('currentUser', JSON.stringify(userData));
-        
         // Başarı mesajı ve yönlendirme
-        alert(`Hoş geldiniz ${userData.firstName}! Hesabınız başarıyla oluşturuldu.`);
-        window.location.href = 'hesabim.html';
+        alert('Kayıt başarılı! Giriş sayfasına yönlendiriliyorsunuz.');
+        setTimeout(() => {
+            window.location.href = 'giris.html';
+        }, 2000);
     });
     
     // Sepet sayacını güncelle
     updateCartCount();
 });
-
-function updatePasswordStrength(password) {
-    let strength = 0;
-    const strengthBar = document.getElementById('passwordStrength');
-    
-    // Uzunluk kontrolü
-    strength += Math.min(password.length * 5, 30);
-    
-    // Çeşitlilik kontrolü
-    if (/[A-Z]/.test(password)) strength += 10;
-    if (/[0-9]/.test(password)) strength += 10;
-    if (/[^A-Za-z0-9]/.test(password)) strength += 15;
-    
-    // Tekrar kontrolü
-    if (!/(.)\1{2,}/.test(password)) strength += 10;
-    
-    strength = Math.min(strength, 100);
-    
-    // Görsel güncelleme
-    if (strength < 30) {
-        strengthBar.style.backgroundColor = '#dc3545';
-    } else if (strength < 70) {
-        strengthBar.style.backgroundColor = '#ffc107';
-    } else {
-        strengthBar.style.backgroundColor = '#28a745';
-    }
-    strengthBar.style.width = strength + '%';
-}
 
 function goToStep(stepNumber) {
     // Tüm adımları ve bölümleri gizle
@@ -128,6 +91,23 @@ function goToStep(stepNumber) {
             sectionElement.classList.add('active');
         }
     }
+}
+
+function calculatePasswordStrength(password) {
+    let strength = 0;
+    
+    // Uzunluk kontrolü
+    strength += Math.min(password.length * 5, 30);
+    
+    // Çeşitlilik kontrolü
+    if (/[A-Z]/.test(password)) strength += 10;
+    if (/[0-9]/.test(password)) strength += 10;
+    if (/[^A-Za-z0-9]/.test(password)) strength += 15;
+    
+    // Tekrar kontrolü
+    if (!/(.)\1{2,}/.test(password)) strength += 10;
+    
+    return Math.min(strength, 100);
 }
 
 function updateCartCount() {
