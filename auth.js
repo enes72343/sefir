@@ -1,68 +1,48 @@
-// Kullanıcı giriş işlemleri
-document.addEventListener('DOMContentLoaded', function() {
-    // Giriş formu
-    document.getElementById('loginForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        const email = document.getElementById('email').value.trim().toLowerCase();
-        const password = document.getElementById('password').value;
-        const rememberMe = document.getElementById('rememberMe').checked;
-        
-        // Kullanıcıları LocalStorage'dan al
-        const users = JSON.parse(localStorage.getItem('users')) || [];
-        
-        // Kullanıcı doğrulama
-        const user = users.find(u => u.email === email && u.password === password);
-        
-        if(user) {
-            // Giriş başarılı
-            localStorage.setItem('currentUser', JSON.stringify(user));
-            
-            // "Beni hatırla" seçeneği
-            if(rememberMe) {
-                const expiryDate = new Date();
-                expiryDate.setMonth(expiryDate.getMonth() + 1);
-                document.cookie = `rememberedUser=${user.id}; expires=${expiryDate.toUTCString()}; path=/`;
-            }
-            
-            // Hoş geldin mesajı
-            showAlert('success', `Hoş geldiniz ${user.firstName}! Yönlendiriliyorsunuz...`);
-            
-            // Yönlendirme
-            setTimeout(() => {
-                window.location.href = 'hesabim.html';
-            }, 2000);
-        } else {
-            // Hata mesajı
-            showAlert('danger', 'E-posta veya şifre hatalı!');
-        }
-    });
-    
-    // Çerez kontrolü (hatırlanan kullanıcı)
-    checkRememberedUser();
-    
-    // Sepet sayacını güncelle
-    updateCartCount();
-});
-
-// Hatırlanan kullanıcıyı kontrol et
-function checkRememberedUser() {
-    const cookies = document.cookie.split('; ').reduce((acc, cookie) => {
-        const [name, value] = cookie.split('=');
-        acc[name] = value;
-        return acc;
-    }, {});
-    
-    if(cookies.rememberedUser) {
-        const users = JSON.parse(localStorage.getItem('users')) || [];
-        const user = users.find(u => u.id == cookies.rememberedUser);
-        
-        if(user) {
-            document.getElementById('email').value = user.email;
-            document.getElementById('rememberMe').checked = true;
-        }
+// Kullanıcı verileri (gerçek uygulamada bu veriler sunucudan gelmeli)
+const users = [
+    {
+        id: 1,
+        email: "demo@bilgikupu.com",
+        password: "demo123",
+        name: "Demo Kullanıcı",
+        purchases: [1, 3] // Satın alınan ürün ID'leri
     }
-}
+];
+
+// Giriş formu işlemleri
+document.getElementById('loginForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const rememberMe = document.getElementById('rememberMe').checked;
+    
+    // Kullanıcı doğrulama
+    const user = users.find(u => u.email === email && u.password === password);
+    
+    if(user) {
+        // Giriş başarılı
+        localStorage.setItem('currentUser', JSON.stringify(user));
+        
+        if(rememberMe) {
+            // 30 gün süreyle hatırla
+            const date = new Date();
+            date.setTime(date.getTime() + (30 * 24 * 60 * 60 * 1000));
+            document.cookie = `rememberedUser=${user.id}; expires=${date.toUTCString()}; path=/`;
+        }
+        
+        // Başarı mesajı
+        showAlert('success', 'Giriş başarılı! Yönlendiriliyorsunuz...');
+        
+        // 2 saniye sonra yönlendirme
+        setTimeout(() => {
+            window.location.href = 'hesabim.html';
+        }, 2000);
+    } else {
+        // Hata mesajı
+        showAlert('danger', 'E-posta veya şifre hatalı!');
+    }
+});
 
 // Alert gösterme fonksiyonu
 function showAlert(type, message) {
@@ -82,6 +62,25 @@ function showAlert(type, message) {
         setTimeout(() => alertDiv.remove(), 150);
     }, 5000);
 }
+
+// Sayfa yüklendiğinde çerez kontrolü
+document.addEventListener('DOMContentLoaded', () => {
+    const cookies = document.cookie.split('; ');
+    const rememberedCookie = cookies.find(c => c.startsWith('rememberedUser='));
+    
+    if(rememberedCookie) {
+        const userId = rememberedCookie.split('=')[1];
+        const user = users.find(u => u.id == userId);
+        
+        if(user) {
+            document.getElementById('email').value = user.email;
+            document.getElementById('rememberMe').checked = true;
+        }
+    }
+    
+    // Sepet sayacını güncelle
+    updateCartCount();
+});
 
 // Sepet sayacını güncelle
 function updateCartCount() {
