@@ -1,106 +1,200 @@
-document.addEventListener('DOMContentLoaded', function() {
-    // Adım geçişleri
-    const nextButtons = document.querySelectorAll('.next-step');
-    const prevButtons = document.querySelectorAll('.prev-step');
-    
-    nextButtons.forEach(button => {
-        button.addEventListener('click', function(e) {
-            e.preventDefault(); // Ekstra koruma
-            const nextStep = this.getAttribute('data-next');
-            goToStep(nextStep);
-        });
-    });
-    
-    prevButtons.forEach(button => {
-        button.addEventListener('click', function(e) {
-            e.preventDefault(); // Ekstra koruma
-            const prevStep = this.getAttribute('data-prev');
-            goToStep(prevStep);
-        });
-    });
-    
-    // Şifre güçlülük kontrolü
-    const passwordInput = document.getElementById('password');
-    const passwordStrengthBar = document.getElementById('passwordStrength');
-    
-    if (passwordInput && passwordStrengthBar) {
-        passwordInput.addEventListener('input', function() {
-            updatePasswordStrength(this.value);
-        });
+// Kullanıcı verilerini yükle
+document.addEventListener('DOMContentLoaded', () => {
+    // Giriş sayfası kontrolleri
+    if (document.getElementById('loginForm')) {
+        const loginForm = document.getElementById('loginForm');
+        loginForm.addEventListener('submit', handleLogin);
+        
+        // "Beni hatırla" çerezi kontrolü
+        const rememberedUser = getCookie('rememberedUser');
+        if (rememberedUser) {
+            const userData = JSON.parse(rememberedUser);
+            document.getElementById('email').value = userData.email;
+            document.getElementById('password').value = userData.password;
+            document.getElementById('rememberMe').checked = true;
+        }
     }
-    
-    // Form gönderimi
-    const finalizeForm = document.getElementById('finalizeForm');
-    if (finalizeForm) {
-        finalizeForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            e.stopPropagation(); // Ekstra koruma
-            
-            // Form verilerini topla
-            const userData = {
-                id: Date.now(), // Benzersiz ID
-                firstName: document.getElementById('firstName').value.trim(),
-                lastName: document.getElementById('lastName').value.trim(),
-                email: document.getElementById('email').value.trim().toLowerCase(),
-                phone: document.getElementById('phone').value.trim(),
-                username: document.getElementById('username').value.trim(),
-                password: document.getElementById('password').value,
-                acceptNewsletter: document.getElementById('acceptNewsletter').checked,
-                createdAt: new Date().toISOString(),
-                purchases: [] // Satın alımlar için boş array
-            };
-            
-            // Kullanıcıları LocalStorage'dan al
-            let users = JSON.parse(localStorage.getItem('users')) || [];
-            
-            // E-posta kontrolü
-            const emailExists = users.some(user => user.email === userData.email);
-            if(emailExists) {
-                showAlert('Bu e-posta adresi zaten kayıtlı!', 'danger');
-                goToStep(1);
-                return false; // İşlemi durdur
-            }
-            
-            // Kullanıcı adı kontrolü
-            const usernameExists = users.some(user => user.username === userData.username);
-            if(usernameExists) {
-                showAlert('Bu kullanıcı adı zaten alınmış!', 'danger');
-                goToStep(2);
-                return false; // İşlemi durdur
-            }
-            
-            // Kullanıcıyı kaydet
-            users.push(userData);
-            localStorage.setItem('users', JSON.stringify(users));
-            
-            // Otomatik giriş yap
-            localStorage.setItem('currentUser', JSON.stringify(userData));
-            
-            // Başarı mesajı ve yönlendirme
-            showAlert(`Hoş geldiniz ${userData.firstName}! Hesabınız başarıyla oluşturuldu.`, 'success');
-            
-            // 2 saniye sonra yönlendirme
-            setTimeout(() => {
-                window.location.href = 'hesabim.html';
-            }, 2000);
-            
-            return false; // Ekstra koruma
-        });
+
+    // Kayıt sayfası kontrolleri
+    if (document.getElementById('registerForm')) {
+        const registerForm = document.getElementById('registerForm');
+        registerForm.addEventListener('submit', handleRegister);
+        
+        // Şifre güçlülük kontrolü
+        const passwordInput = document.getElementById('password');
+        if (passwordInput) {
+            passwordInput.addEventListener('input', function() {
+                updatePasswordStrength(this.value);
+            });
+        }
     }
-    
-    // Sepet sayacını güncelle
-    updateCartCount();
+
+    // Profil sayfası kontrolleri
+    if (window.location.pathname.includes('profile.html') || 
+        window.location.pathname.includes('hesabim.html')) {
+        loadUserProfile();
+    }
 });
 
-// Alert gösterme fonksiyonu
+// Giriş işlemi
+function handleLogin(e) {
+    e.preventDefault();
+    
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const rememberMe = document.getElementById('rememberMe').checked;
+    
+    const users = JSON.parse(localStorage.getItem('users')) || [];
+    const user = users.find(u => u.email === email && u.password === password);
+    
+    if (user) {
+        // Giriş başarılı
+        localStorage.setItem('currentUser', JSON.stringify(user));
+        
+        // "Beni hatırla" seçeneği
+        if (rememberMe) {
+            setCookie('rememberedUser', JSON.stringify({email, password}), 30);
+        } else {
+            deleteCookie('rememberedUser');
+        }
+        
+        // Yönlendirme
+        window.location.href = 'profile.html';
+    } else {
+        showAlert('Hatalı e-posta veya şifre!', 'danger');
+    }
+}
+
+// Kayıt işlemi
+function handleRegister(e) {
+    e.preventDefault();
+    
+    const userData = {
+        id: Date.now(),
+        firstName: document.getElementById('firstName').value.trim(),
+        lastName: document.getElementById('lastName').value.trim(),
+        email: document.getElementById('email').value.trim().toLowerCase(),
+        phone: document.getElementById('phone').value.trim(),
+        username: document.getElementById('username').value.trim(),
+        password: document.getElementById('password').value,
+        createdAt: new Date().toISOString(),
+        purchases: []
+    };
+    
+    const confirmPassword = document.getElementById('confirmPassword').value;
+    
+    // Validasyonlar
+    if (userData.password !== confirmPassword) {
+        showAlert('Şifreler eşleşmiyor!', 'danger');
+        return;
+    }
+    
+    if (userData.password.length < 8) {
+        showAlert('Şifre en az 8 karakter olmalıdır!', 'danger');
+        return;
+    }
+    
+    const users = JSON.parse(localStorage.getItem('users')) || [];
+    
+    if (users.some(u => u.email === userData.email)) {
+        showAlert('Bu e-posta zaten kayıtlı!', 'danger');
+        return;
+    }
+    
+    if (users.some(u => u.username === userData.username)) {
+        showAlert('Bu kullanıcı adı zaten alınmış!', 'danger');
+        return;
+    }
+    
+    // Kullanıcıyı kaydet
+    users.push(userData);
+    localStorage.setItem('users', JSON.stringify(users));
+    localStorage.setItem('currentUser', JSON.stringify(userData));
+    
+    showAlert('Kayıt başarılı! Yönlendiriliyorsunuz...', 'success');
+    setTimeout(() => window.location.href = 'profile.html', 1500);
+}
+
+// Kullanıcı profilini yükle
+function loadUserProfile() {
+    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+    
+    if (!currentUser) {
+        window.location.href = 'login.html';
+        return;
+    }
+    
+    // Profil bilgilerini göster
+    if (document.getElementById('user-name')) {
+        document.getElementById('user-name').textContent = `${currentUser.firstName} ${currentUser.lastName}`;
+    }
+    
+    if (document.getElementById('user-email')) {
+        document.getElementById('user-email').textContent = currentUser.email;
+    }
+    
+    if (document.getElementById('user-phone')) {
+        document.getElementById('user-phone').textContent = currentUser.phone || 'Belirtilmemiş';
+    }
+    
+    if (document.getElementById('member-since')) {
+        const joinDate = new Date(currentUser.createdAt);
+        document.getElementById('member-since').textContent = joinDate.toLocaleDateString('tr-TR');
+    }
+    
+    // Satın alımları yükle
+    if (currentUser.purchases && currentUser.purchases.length > 0) {
+        loadPurchases(currentUser.purchases);
+    }
+    
+    // Çıkış butonu
+    const logoutBtn = document.getElementById('logout-btn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', logout);
+    }
+}
+
+// Çıkış işlemi
+function logout() {
+    localStorage.removeItem('currentUser');
+    deleteCookie('rememberedUser');
+    window.location.href = 'login.html';
+}
+
+// Diğer yardımcı fonksiyonlar...
+function setCookie(name, value, days) {
+    const date = new Date();
+    date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+    const expires = "expires=" + date.toUTCString();
+    document.cookie = name + "=" + value + ";" + expires + ";path=/";
+}
+
+function getCookie(name) {
+    const nameEQ = name + "=";
+    const ca = document.cookie.split(';');
+    for (let i = 0; i < ca.length; i++) {
+        let c = ca[i];
+        while (c.charAt(0) === ' ') c = c.substring(1);
+        if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+    }
+    return null;
+}
+
+function deleteCookie(name) {
+    document.cookie = name + '=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+}
+
 function showAlert(message, type) {
     const alertDiv = document.createElement('div');
-    alertDiv.className = `alert alert-${type} fixed-top mx-auto mt-3`;
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show fixed-top mx-auto mt-3`;
     alertDiv.style.maxWidth = '500px';
     alertDiv.style.zIndex = '9999';
     alertDiv.style.left = '0';
     alertDiv.style.right = '0';
-    alertDiv.textContent = message;
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    `;
     
     document.body.appendChild(alertDiv);
     
@@ -109,12 +203,11 @@ function showAlert(message, type) {
     }, 3000);
 }
 
-// Kalan fonksiyonlar aynı şekilde kalabilir...
 function updatePasswordStrength(password) {
-    let strength = 0;
     const strengthBar = document.getElementById('passwordStrength');
-    
     if (!strengthBar) return;
+    
+    let strength = 0;
     
     // Uzunluk kontrolü
     strength += Math.min(password.length * 5, 30);
@@ -138,138 +231,4 @@ function updatePasswordStrength(password) {
         strengthBar.style.backgroundColor = '#28a745';
     }
     strengthBar.style.width = strength + '%';
-}
-
-function goToStep(stepNumber) {
-    // Tüm adımları ve bölümleri gizle
-    document.querySelectorAll('.step').forEach(step => {
-        step.classList.remove('active', 'completed');
-    });
-    
-    document.querySelectorAll('.form-section').forEach(section => {
-        section.classList.remove('active');
-    });
-    
-    // Aktif adımı işaretle
-    for (let i = 1; i <= stepNumber; i++) {
-        const stepElement = document.getElementById('step' + i);
-        const sectionElement = document.getElementById('section' + i);
-        
-        if (i < stepNumber) {
-            stepElement.classList.add('completed');
-        } else if (i == stepNumber) {
-            stepElement.classList.add('active');
-            if (sectionElement) sectionElement.classList.add('active');
-        }
-    }
-}
-
-function updateCartCount() {
-    const cart = JSON.parse(localStorage.getItem('cart')) || [];
-    const cartCount = document.getElementById('cart-count');
-    if (cartCount) {
-        cartCount.textContent = cart.reduce((total, item) => total + item.quantity, 0);
-    }
-}
-
-// Kullanıcı hesap yönetimi
-if (window.location.pathname.includes('hesabim.html')) {
-    document.addEventListener('DOMContentLoaded', function() {
-        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-        
-        // Giriş kontrolü
-        if(!currentUser) {
-            window.location.href = 'giris.html';
-            return;
-        }
-        
-        // Kullanıcı bilgilerini yükle
-        loadUserProfile(currentUser);
-        
-        // Satın alımları yükle
-        loadUserPurchases(currentUser);
-        
-        // Çıkış butonu
-        const logoutBtn = document.getElementById('logout-btn');
-        if (logoutBtn) {
-            logoutBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                logoutUser();
-            });
-        }
-    });
-}
-
-// Kullanıcı profilini yükle
-function loadUserProfile(user) {
-    if (!user) return;
-    
-    const userName = document.getElementById('user-name');
-    const userEmail = document.getElementById('user-email');
-    const userPhone = document.getElementById('user-phone');
-    const userJoinDate = document.getElementById('user-join-date');
-    const userAvatar = document.getElementById('user-avatar');
-    
-    if (userName) userName.textContent = `${user.firstName} ${user.lastName}`;
-    if (userEmail) userEmail.textContent = user.email;
-    if (userPhone) userPhone.textContent = user.phone || 'Belirtilmemiş';
-    if (userJoinDate) userJoinDate.textContent = new Date(user.createdAt).toLocaleDateString('tr-TR');
-    
-    // Profil resmi (isim baş harfleri)
-    if (userAvatar) {
-        const initials = `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase();
-        userAvatar.textContent = initials;
-    }
-}
-
-// Satın alımları yükle
-function loadUserPurchases(user) {
-    if (!user) return;
-    
-    const purchasesContainer = document.getElementById('purchases-container');
-    if (!purchasesContainer) return;
-    
-    if(user.purchases && user.purchases.length > 0) {
-        // Satın alınan ürünleri göster
-        purchasesContainer.innerHTML = user.purchases.map(purchase => `
-            <div class="col-md-6 mb-4">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <h5 class="card-title">${purchase.name}</h5>
-                        <p class="card-text">${purchase.description || ''}</p>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span class="badge bg-success">${purchase.status || 'Tamamlandı'}</span>
-                            <small class="text-muted">${purchase.date || new Date().toLocaleDateString('tr-TR')}</small>
-                        </div>
-                    </div>
-                    <div class="card-footer bg-transparent">
-                        <button class="btn btn-sm btn-outline-primary download-btn" data-id="${purchase.id}">
-                            <i class="fas fa-download me-1"></i> İndir
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `).join('');
-    } else {
-        // Satın alım yoksa mesaj göster
-        purchasesContainer.innerHTML = `
-            <div class="col-12 text-center py-5">
-                <i class="fas fa-box-open fa-4x text-muted mb-3"></i>
-                <h4>Henüz satın alım yapmamışsınız</h4>
-                <p class="text-muted">Eğitim paketlerimizi keşfetmek için mağazamızı ziyaret edin</p>
-                <a href="index.html" class="btn btn-primary">Mağazaya Git</a>
-            </div>
-        `;
-    }
-}
-
-// Çıkış yap
-function logoutUser() {
-    localStorage.removeItem('currentUser');
-    
-    // Çerezi sil
-    document.cookie = "rememberedUser=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-    
-    // Giriş sayfasına yönlendir
-    window.location.href = 'giris.html';
 }
